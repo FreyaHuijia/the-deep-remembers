@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Deep Remembers — a digital lifeform raised on language</title>
+<meta name="description" content="The Deep Remembers is an interactive artwork about how language models learn. Speak to a bioluminescent deep-sea organism and watch your words become part of it.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..600&family=Spline+Sans+Mono:wght@400;500&family=Spline+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --abyss:#02040A;
+    --silt:#8195AC;
+    --foam:#DDE7F1;
+    --cyan:#4DE8D2;
+    --rule:rgba(129,149,172,.18);
+    --display:"Fraunces",Georgia,serif;
+    --body:"Spline Sans",system-ui,sans-serif;
+    --mono:"Spline Sans Mono",ui-monospace,monospace;
+  }
+
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+
+  body{
+    background:var(--abyss);color:var(--silt);
+    font-family:var(--body);font-weight:300;
+    font-size:clamp(15px,1.05vw + 12px,17px);line-height:1.65;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  ::selection{background:rgba(77,232,210,.25);color:var(--foam)}
+  a{color:var(--foam);text-decoration:none;border-bottom:1px solid var(--rule)}
+  a:hover{border-bottom-color:var(--cyan)}
+  :focus-visible{outline:2px solid var(--cyan);outline-offset:3px;border-radius:2px}
+
+  .wrap{width:min(1080px,100% - 2.5rem);margin-inline:auto}
+
+  .eyebrow{
+    font-family:var(--mono);font-size:.68rem;font-weight:500;
+    letter-spacing:.16em;text-transform:uppercase;color:rgba(129,149,172,.7);
+  }
+
+  /* ---------- tank ---------- */
+
+  .tank{
+    position:relative;height:100vh;height:100svh;overflow:hidden;
+    background:radial-gradient(120% 90% at 50% 10%,#0E2740 0%,#071426 44%,#02040A 100%);
+  }
+  #sea{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:crosshair}
+  .tank__floor{
+    position:absolute;left:0;right:0;bottom:0;height:32%;pointer-events:none;
+    background:linear-gradient(to bottom,rgba(2,4,10,0),rgba(2,4,10,.9));
+  }
+
+  .mark{position:absolute;top:1.5rem;left:1.5rem;z-index:3;pointer-events:none;display:grid;gap:.15rem}
+  .mark__n{
+    font-family:var(--display);font-optical-sizing:auto;
+    font-variation-settings:"SOFT" 60,"WONK" 1;
+    font-weight:400;font-size:.95rem;letter-spacing:.01em;color:var(--foam);
+  }
+  .mark__n em{font-style:italic;font-weight:300;color:var(--cyan)}
+  .mark__t{font-family:var(--mono);font-size:.6rem;letter-spacing:.09em;color:rgba(129,149,172,.65)}
+
+  .hud{position:absolute;top:1.4rem;right:1.5rem;z-index:3;width:238px;display:grid;gap:.7rem;pointer-events:none}
+  .hud__c{font-family:var(--mono);font-size:.6rem;letter-spacing:.08em;color:rgba(129,149,172,.6);text-align:right}
+  .hud__c b{color:var(--foam);font-weight:500;font-variant-numeric:tabular-nums}
+  .hud__state{
+    font-family:var(--mono);font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;
+    text-align:right;color:var(--cyan);opacity:.5;transition:opacity .5s,color .5s;
+  }
+  .hud__dims{display:grid;gap:.5rem}
+
+  .hrow{display:grid;gap:.18rem}
+  .hrow__k{font-family:var(--mono);font-size:.55rem;letter-spacing:.18em;text-transform:uppercase;color:rgba(129,149,172,.45)}
+  .hbar{display:grid;grid-template-columns:auto minmax(0,1fr) 2px minmax(0,1fr) auto;align-items:center;gap:.35rem}
+  .hbar__lab{font-family:var(--mono);font-size:.55rem;letter-spacing:.03em;white-space:nowrap;transition:opacity .4s}
+  .hbar__tr{position:relative;height:5px;background:rgba(129,149,172,.1)}
+  .hbar__tr i{position:absolute;top:0;bottom:0;width:0;transition:width .55s cubic-bezier(.4,0,.2,1)}
+  .hbar__tr--l i{right:0}
+  .hbar__tr--r i{left:0}
+  .hbar__ax{width:2px;height:9px;background:rgba(129,149,172,.3)}
+
+  .console{
+    position:absolute;left:0;right:0;bottom:0;z-index:3;
+    padding-bottom:clamp(1.6rem,4vh,2.6rem);display:grid;gap:.7rem;justify-items:center;
+  }
+  .teach{display:flex;gap:.55rem;flex-wrap:wrap;justify-content:center;width:min(560px,100%)}
+  .teach__field{
+    flex:1 1 240px;min-width:0;display:flex;align-items:center;gap:.5rem;
+    background:rgba(4,10,20,.55);border:1px solid var(--rule);border-radius:999px;
+    padding:.1rem .3rem .1rem 1.05rem;backdrop-filter:blur(12px);transition:border-color .25s;
+  }
+  .teach__field:focus-within{border-color:rgba(77,232,210,.5)}
+  .teach input{
+    flex:1;min-width:0;background:none;border:0;color:var(--foam);
+    font-family:var(--body);font-size:.95rem;font-weight:300;padding-block:.85rem;
+  }
+  .teach input::placeholder{color:rgba(129,149,172,.6)}
+  .teach input:focus{outline:none}
+
+  .btn{
+    border:1px solid var(--rule);border-radius:999px;background:rgba(4,10,20,.55);color:var(--foam);
+    font-family:var(--mono);font-size:.72rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;
+    padding:.85rem 1.2rem;cursor:pointer;backdrop-filter:blur(12px);
+    transition:background .25s,border-color .25s,color .25s;white-space:nowrap;
+  }
+  .btn:hover{background:rgba(77,232,210,.12);border-color:rgba(77,232,210,.45);color:var(--cyan)}
+  .btn--send{border:0;padding:.7rem 1.05rem;background:rgba(77,232,210,.14);color:var(--cyan);backdrop-filter:none}
+  .btn--send:hover{background:rgba(77,232,210,.24)}
+  .btn--mic[aria-pressed="true"]{
+    background:rgba(199,125,255,.16);border-color:rgba(199,125,255,.5);color:#C77DFF;
+    animation:listen 1.6s ease-in-out infinite;
+  }
+  @keyframes listen{50%{box-shadow:0 0 0 6px rgba(199,125,255,.09)}}
+
+  .hint{font-family:var(--mono);font-size:.66rem;letter-spacing:.05em;color:rgba(129,149,172,.55);text-align:center;max-width:50ch;line-height:1.6}
+
+  /* ---------- title ---------- */
+
+  .title{padding-block:clamp(4.5rem,11vh,8rem) clamp(3rem,7vh,5rem)}
+  .title .wrap{display:grid;gap:1.4rem;justify-items:start}
+  h1{
+    font-family:var(--display);font-optical-sizing:auto;
+    font-variation-settings:"SOFT" 60,"WONK" 1;font-weight:400;
+    font-size:clamp(2.9rem,9.5vw,7rem);line-height:.9;letter-spacing:-.035em;color:var(--foam);
+  }
+  h1 em{font-style:italic;font-weight:300;color:var(--cyan)}
+  .tagline{
+    font-family:var(--display);font-weight:300;font-variation-settings:"SOFT" 40,"WONK" 0;
+    font-size:clamp(1.15rem,2.2vw,1.5rem);color:var(--cyan);opacity:.92;letter-spacing:-.01em;
+  }
+  .dek{max-width:48ch;color:var(--foam);opacity:.8;font-size:1rem;line-height:1.6}
+
+  section.prose-sec{padding-block:clamp(3.5rem,8vh,6rem);border-top:1px solid var(--rule)}
+  .two{display:grid;grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);gap:clamp(2rem,5vw,4.5rem);align-items:start}
+  .prose > * + *{margin-top:1.1em}
+  .prose strong{color:var(--foam);font-weight:400}
+  .lede{
+    font-family:var(--display);font-weight:300;font-variation-settings:"SOFT" 40,"WONK" 0;
+    font-size:clamp(1.5rem,3.1vw,2.35rem);line-height:1.32;letter-spacing:-.02em;
+    color:var(--foam);max-width:20ch;
+  }
+
+  .proverb{text-align:center;display:grid;gap:1.6rem;justify-items:center;padding-block:clamp(5rem,12vh,8rem);border-top:1px solid var(--rule)}
+  .proverb__zh{font-family:var(--display);font-weight:300;font-size:clamp(1.9rem,5.6vw,3.4rem);letter-spacing:.12em;color:var(--foam);line-height:1.3}
+  .proverb__en{font-family:var(--display);font-style:italic;font-size:1.05rem;color:var(--cyan);opacity:.9}
+  .proverb p{max-width:52ch;font-size:.98rem}
+
+  footer{border-top:1px solid var(--rule);padding-block:2.5rem 4rem}
+  footer .wrap{display:flex;justify-content:space-between;gap:1.5rem;flex-wrap:wrap;align-items:baseline}
+  footer p{font-family:var(--mono);font-size:.68rem;letter-spacing:.06em;color:rgba(129,149,172,.6)}
+
+  @media (max-width:820px){
+    .two{grid-template-columns:1fr}
+    .lede{max-width:none}
+    .mark{top:1.1rem;left:1.1rem}
+    .mark__t{display:none}
+    .hud{top:1rem;right:1.1rem;width:118px;gap:.5rem}
+    .hbar__lab{display:none}
+    .hrow__k{font-size:.5rem;letter-spacing:.12em}
+    .hud__c{font-size:.55rem}
+  }
+
+  @media (prefers-reduced-motion:reduce){
+    html{scroll-behavior:auto}
+    .btn--mic[aria-pressed="true"]{animation:none}
+  }
+</style>
+</head>
+<body>
+
+<div class="tank">
+  <canvas id="sea"></canvas>
+  <div class="tank__floor"></div>
+
+  <div class="mark">
+    <p class="mark__n">The Deep <em>Remembers</em></p>
+    <p class="mark__t">Every word becomes part of something larger</p>
+  </div>
+
+  <div class="hud" aria-hidden="true">
+    <p class="hud__c">Nodes <b id="s-nodes">07</b> · Eaten <b id="s-eaten">00</b> · Adrift <b id="s-adrift">00</b></p>
+    <p class="hud__state" id="s-mood">Breathing</p>
+    <div class="hud__dims" id="dims"></div>
+  </div>
+
+  <div class="console wrap">
+    <div class="teach">
+      <div class="teach__field">
+        <input id="say" type="text" placeholder="Say something to it" autocomplete="off" spellcheck="false" aria-label="Say something to the organism">
+        <button class="btn btn--send" id="send">Teach</button>
+      </div>
+      <button class="btn btn--mic" id="mic" aria-pressed="false" hidden>Speak</button>
+    </div>
+    <p class="hint">Your sentence rises whole, then bursts apart. It listens, then hunts the pieces it wants. What it refuses keeps rising, and is lost at the surface.</p>
+  </div>
+</div>
+
+<main>
+
+  <section class="title">
+    <div class="wrap">
+      <p class="eyebrow">An interactive artwork about how language models learn</p>
+      <h1>The Deep<br><em>Remembers</em></h1>
+      <p class="tagline">Every word becomes part of something larger.</p>
+      <p class="dek">A bioluminescent organism that grows on what you say to it. Speak, and your words become light it swims toward, absorbs, and keeps.</p>
+    </div>
+  </section>
+
+  <section class="prose-sec">
+    <div class="wrap two">
+      <p class="lede">Instead of feeding a virtual pet, you talk to it.</p>
+      <div class="prose">
+        <p>The Deep Remembers raises a digital lifeform on language. The creature has no mouth to feed. What it eats is meaning.</p>
+        <p>A sentence enters the water whole. It rises slowly, intact, still a phrase — and the creature stops to listen while it climbs. Then the sentence comes apart. The words scatter on the current, each one taking on the color of what it means, and the grammar that held them together dissolves and is gone.</p>
+        <p>A language model does the reading. It returns structure, not pictures: where each word falls on four axes — <strong>emotion</strong> positive or negative, <strong>concept</strong> abstract or concrete, <strong>sensation</strong> light or dark, <strong>relation</strong> self or other. Each pole has its own color, opposite its twin.</p>
+        <p>The creature has a taste of its own, and it chooses. It hunts what it already likes and lets the rest go. Refused words keep rising, out of the light, and are gone at the surface. You can say a thing and watch it leave.</p>
+        <p>It breathes the whole time. Pulses travel between its lights. When it swallows a word the entire network flares. When the word is a concept it has never met, it hesitates, and its connections visibly try to rearrange themselves around the new thing. Touch it with your cursor and it flinches, then comes back, slowly, to see what you are.</p>
+        <p>Every absorbed word adds a node, wires a connection, pulls its color toward that pole, and makes it grow. New tentacles unfurl from its outer lights as it gets bigger. The network inside is a <strong>visible world model</strong> — a picture of what it has been told, made out of the telling. It is built only from what it agreed to take.</p>
+        <p>Two people will never raise the same creature. What you say to it is what it becomes.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="proverb wrap">
+    <p class="eyebrow">The premise</p>
+    <p class="proverb__zh">一言既出，驷马难追</p>
+    <p class="proverb__en">Words once spoken cannot be taken back.</p>
+    <p>Every conversation with an AI leaves a trace. It shapes what the system understands, and it shapes what the next system does. The Deep Remembers makes that trace something you can watch swim.</p>
+    <p>You can't un-teach it. You can only keep talking.</p>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>The Deep Remembers — project concept</p>
+    <p>Freya · Digital Media, Georgia Tech</p>
+  </div>
+</footer>
+
+<script>
+(() => {
+  const canvas = document.getElementById('sea');
+  const ctx = canvas.getContext('2d');
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // ================= dimensions =================
+  const DIMS = [
+    { key:'emotion', label:'Emotion', poles:[
+      { id:'positive', label:'Positive', hue:48,
+        words:'love joy happy hope glad warm kind delight wonder proud peace laugh tender trust brave grateful sweet friend safe alive beautiful play gentle' },
+      { id:'negative', label:'Negative', hue:228,
+        words:'fear sad grief angry anger lonely afraid scared hurt pain cruel shame doubt rage bitter loss cry sorry tired empty dread worry ache broken' }
+    ]},
+    { key:'concept', label:'Concept', poles:[
+      { id:'abstract', label:'Abstract', hue:165,
+        words:'time truth meaning mind thought idea reason logic language knowledge intelligence pattern system model rule question theory freedom justice memory being nothing infinity' },
+      { id:'concrete', label:'Concrete', hue:345,
+        words:'stone water rock bone tree hand rain fish shell metal glass sand bread wire machine body eye skin coral rope ship net salt' }
+    ]},
+    { key:'sensation', label:'Sensation', poles:[
+      { id:'light', label:'Light', hue:95,
+        words:'glow shine bright glimmer flash sun dawn clear open loud fast sharp hot burning gold visible awake surface float rise' },
+      { id:'dark', label:'Dark', hue:275,
+        words:'dark deep black shadow cold quiet silence slow heavy dim night sink pressure blind hidden buried below murk still frozen' }
+    ]},
+    { key:'relation', label:'Relation', poles:[
+      { id:'self', label:'Self', hue:20,
+        words:'i me my mine myself self alone own inside solo single individual voice private secret' },
+      { id:'other', label:'Other', hue:200,
+        words:'you your we us they them together share everyone someone other people world ours listen answer between tell speak' }
+    ]}
+  ];
+
+  const SIDE = {}, LOOKUP = new Map();
+  for (const d of DIMS) for (const p of d.poles){
+    SIDE[p.id] = { hue:p.hue, dim:d.key, label:p.label };
+    for (const w of p.words.split(/\s+/)) if (w) LOOKUP.set(w, p.id);
+  }
+  const SIDE_IDS = Object.keys(SIDE);
+  const STOP = new Set("the a an and or but of to in on at is are was were be been it its that this with for as if so do does did have has had will would can could just about from there here what when".split(' '));
+
+  const clean = w => w.toLowerCase().replace(/[^\p{L}\p{N}']/gu, '');
+  function classify(w){
+    if (LOOKUP.has(w)) return LOOKUP.get(w);
+    let h = 0;
+    for (let i = 0; i < w.length; i++) h = (h * 31 + w.charCodeAt(i)) >>> 0;
+    return SIDE_IDS[h % SIDE_IDS.length];
+  }
+
+  // ================= canvas =================
+  let W = 0, H = 0, DPR = 1;
+  function resize(){
+    DPR = Math.min(devicePixelRatio || 1, 2);
+    const r = canvas.getBoundingClientRect();
+    W = r.width; H = r.height;
+    canvas.width = Math.round(W * DPR);
+    canvas.height = Math.round(H * DPR);
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  }
+
+  // ================= creature =================
+  const MAX_NODES = 170;
+  const cre = {
+    x:0, y:0, vx:0, vy:0, hue:165,
+    nodes:[], edges:[], pulses:[], strands:[],
+    tally:{}, pref:{}, eaten:0,
+    br:0,                 // breath phase — it never stops
+    contract:1,           // body tension: flinch shrinks, listening opens
+    jitter:0,
+    mood:'idle', moodT:0, flinchCd:0, rewireT:0,
+    wander:{ x:0, y:0, t:0 }, flash:0
+  };
+
+  const bodyR = () => 30 + Math.sqrt(cre.nodes.length) * 7.6;
+
+  const MOOD_LABEL = { idle:'Breathing', listening:'Listening', hesitating:'Hesitating', flinching:'Startled', curious:'Curious' };
+  function mood(name, dur){ cre.mood = name; cre.moodT = dur; document.getElementById('s-mood').textContent = MOOD_LABEL[name]; }
+
+  function addNode(hue, parent){
+    if (cre.nodes.length >= MAX_NODES) return Math.floor(Math.random() * cre.nodes.length);
+    const p = parent !== undefined ? cre.nodes[parent] : null;
+    const a = Math.random() * Math.PI * 2, d = 16 + Math.random() * 26;
+    cre.nodes.push({
+      ox:(p ? p.ox : 0) + Math.cos(a) * d,
+      oy:(p ? p.oy : 0) + Math.sin(a) * d,
+      x:cre.x, y:cre.y, hue,
+      r:2 + Math.random() * 2.2, ph:Math.random() * 6.28, sp:.5 + Math.random() * .9,
+      ph2:Math.random() * 6.28, sp2:.4 + Math.random() * 1.1
+    });
+    if (p) cre.edges.push({ a:parent, b:cre.nodes.length - 1, hot:0 });
+    return cre.nodes.length - 1;
+  }
+
+  // tentacles hang from the outermost lights, and multiply as it grows
+  function ensureStrands(){
+    const want = Math.min(26, 6 + Math.floor(cre.nodes.length / 3.2));
+    while (cre.strands.length < want){
+      const i = cre.strands.length, kind = i % 3;
+      const n = kind === 0 ? 7 : kind === 1 ? 12 : 16;
+      cre.strands.push({
+        node:0, n, w: kind === 0 ? 2.6 : kind === 1 ? 1.3 : .9,
+        ph:Math.random() * 6.28,
+        pts:Array.from({ length:n }, () => ({ x:cre.x, y:cre.y }))
+      });
+    }
+    const order = cre.nodes.map((n, i) => [i, Math.hypot(n.ox, n.oy)]).sort((a, b) => b[1] - a[1]);
+    cre.strands.forEach((s, i) => { s.node = order[i % order.length][0]; });
+  }
+
+  function seed(){
+    cre.nodes.length = 0; cre.edges.length = 0; cre.strands.length = 0;
+    for (const id of SIDE_IDS){ cre.tally[id] = 0; cre.pref[id] = .16 + Math.random() * .7; }
+    addNode(165);
+    for (let i = 0; i < 6; i++) addNode(165 + (Math.random() * 24 - 12), Math.floor(Math.random() * cre.nodes.length));
+    ensureStrands();
+  }
+
+  function blendHue(){
+    let sx = 0, sy = 0, tot = 0;
+    for (const id of SIDE_IDS){
+      const n = cre.tally[id]; if (!n) continue;
+      const r = SIDE[id].hue * Math.PI / 180;
+      sx += Math.cos(r) * n; sy += Math.sin(r) * n; tot += n;
+    }
+    return tot ? ((Math.atan2(sy, sx) * 180 / Math.PI) + 360) % 360 : 165;
+  }
+
+  function wants(id){
+    const tot = cre.eaten || 1;
+    return Math.min(.92, cre.pref[id] * .6 + (cre.tally[id] / tot) * .5);
+  }
+
+  // it chooses. what it doesn't want, it doesn't take.
+  function judge(tk){
+    tk.state = Math.random() < wants(tk.side) ? 'wanted' : 'waiting';
+  }
+
+  function learn(word, sideId){
+    const novel = cre.tally[sideId] === 0 && cre.eaten > 1;   // a pole it has never met
+    cre.tally[sideId]++; cre.eaten++;
+    const parent = Math.floor(Math.random() * cre.nodes.length);
+    const n = addNode(SIDE[sideId].hue + (Math.random() * 20 - 10), parent);
+    if (cre.nodes.length % 3 === 0 && cre.nodes.length > 4){
+      const a = Math.floor(Math.random() * cre.nodes.length);
+      if (a !== n) cre.edges.push({ a, b:n, hot:0 });
+    }
+    cre.hue = blendHue();
+    cre.flash = 1;                                            // the whole network flares
+    ensureStrands();
+    if (novel){ mood('hesitating', 190); cre.rewireT = 0; }   // strange concept: stop, rethink
+    for (const tk of tokens) if (tk.state === 'waiting' && Math.random() < .3) judge(tk);
+    readout();
+  }
+
+  // ================= phrases =================
+  const phrases = [], tokens = [], motes = [];
+  const PH_FONT = '400 13px "Spline Sans Mono", monospace';
+
+  function spawnPhrase(text){
+    ctx.font = PH_FONT;
+    const raw = text.trim().split(/\s+/).slice(0, 9);
+    if (!raw.length) return;
+    const space = ctx.measureText(' ').width;
+    let x = 0;
+    const words = raw.map(w => {
+      const width = ctx.measureText(w).width;
+      const c = clean(w);
+      const o = { raw:w, c, width, x0:x, content: c.length > 0 && !STOP.has(c) };
+      x += width + space;
+      return o;
+    });
+    const total = x - space;
+    phrases.push({
+      words, total,
+      x: Math.max(total / 2 + 26, Math.min(W - total / 2 - 26, W * .5 + (Math.random() - .5) * 70)),
+      y: H * .74 + (Math.random() - .5) * 36, vx:(Math.random() - .5) * .1, ph:Math.random() * 6.28,
+      t:0, life:150, fade:0
+    });
+    mood('listening', 160);   // it stops to hear the whole thing
+  }
+
+  function fragment(p){
+    for (const w of p.words){
+      const wx = p.x - p.total / 2 + w.x0 + w.width / 2;
+      const a = Math.random() * Math.PI * 2, s = 2.8 + Math.random() * 2.6;
+      if (w.content) spawn(w.c, classify(w.c), wx, p.y, Math.cos(a) * s, Math.sin(a) * s - .3);
+      else motes.push({ x:wx, y:p.y, vx:Math.cos(a) * s * .8, vy:Math.sin(a) * s * .8 - .3, w:w.raw, life:1 });
+    }
+  }
+
+  function spawn(word, sideId, x, y, vx, vy){
+    const tk = {
+      word, side:sideId, hue:SIDE[sideId].hue + (Math.random() * 20 - 10),
+      x, y, vx, vy, ph:Math.random() * 6.28,
+      eaten:0, age:0, retry:0, born:0, out:1, state:'waiting'
+    };
+    judge(tk);
+    tokens.push(tk);
+    if (tokens.length > 90) tokens.shift();
+    readout();
+  }
+
+  function teach(text){
+    const all = text.trim().split(/\s+/);
+    for (let i = 0; i < all.length; i += 9){
+      const chunk = all.slice(i, i + 9).join(' ');
+      setTimeout(() => spawnPhrase(chunk), (i / 9) * 900);
+    }
+  }
+
+  // ================= HUD =================
+  const dimsEl = document.getElementById('dims'), bars = {};
+  for (const d of DIMS){
+    const [L, R] = d.poles;
+    const row = document.createElement('div');
+    row.className = 'hrow';
+    row.innerHTML =
+      `<span class="hrow__k">${d.label}</span>` +
+      `<div class="hbar">` +
+        `<span class="hbar__lab" data-lab="${L.id}" style="color:hsl(${L.hue},80%,66%)">${L.label}</span>` +
+        `<div class="hbar__tr hbar__tr--l"><i data-f="${L.id}" style="background:linear-gradient(to left,hsl(${L.hue},85%,60%),hsla(${L.hue},85%,60%,.3))"></i></div>` +
+        `<div class="hbar__ax"></div>` +
+        `<div class="hbar__tr hbar__tr--r"><i data-f="${R.id}" style="background:linear-gradient(to right,hsl(${R.hue},85%,60%),hsla(${R.hue},85%,60%,.3))"></i></div>` +
+        `<span class="hbar__lab" data-lab="${R.id}" style="color:hsl(${R.hue},80%,66%)">${R.label}</span>` +
+      `</div>`;
+    dimsEl.appendChild(row);
+  }
+  for (const id of SIDE_IDS) bars[id] = {
+    fill: dimsEl.querySelector(`[data-f="${id}"]`),
+    lab:  dimsEl.querySelector(`[data-lab="${id}"]`)
+  };
+  const pad2 = n => String(n).padStart(2, '0');
+
+  function readout(){
+    let max = 1;
+    for (const id of SIDE_IDS) max = Math.max(max, cre.tally[id]);
+    for (const id of SIDE_IDS){
+      bars[id].fill.style.width = (cre.tally[id] / max * 100) + '%';
+      bars[id].lab.style.opacity = cre.tally[id] ? 1 : .4;
+    }
+    let adrift = 0;
+    for (const t of tokens) if (!t.eaten) adrift++;
+    document.getElementById('s-nodes').textContent = pad2(cre.nodes.length);
+    document.getElementById('s-eaten').textContent = pad2(cre.eaten);
+    document.getElementById('s-adrift').textContent = pad2(adrift);
+  }
+
+  // ================= marine snow =================
+  const snow = [];
+  function makeSnow(){
+    snow.length = 0;
+    const n = Math.round(Math.min(W, 1400) / 12);
+    for (let i = 0; i < n; i++) snow.push({
+      x:Math.random() * W, y:Math.random() * H, r:.4 + Math.random() * 1.4,
+      v:.06 + Math.random() * .25, a:.1 + Math.random() * .35, ph:Math.random() * 6.28
+    });
+  }
+
+  // ================= pointer =================
+  const ptr = { x:-999, y:-999, vx:0, vy:0, on:false };
+  canvas.addEventListener('pointermove', e => {
+    const r = canvas.getBoundingClientRect();
+    const nx = e.clientX - r.left, ny = e.clientY - r.top;
+    if (ptr.on){ ptr.vx = nx - ptr.x; ptr.vy = ny - ptr.y; }
+    ptr.x = nx; ptr.y = ny; ptr.on = true;
+  });
+  canvas.addEventListener('pointerleave', () => { ptr.on = false; ptr.x = ptr.y = -999; ptr.vx = ptr.vy = 0; });
+
+  // ================= loop =================
+  let last = performance.now(), acc = 0;
+  function frame(now){
+    const dt = Math.min((now - last) / 16.67, 3); last = now;
+    acc += dt;
+    step(dt, acc); draw(acc);
+    requestAnimationFrame(frame);
+  }
+
+  function step(dt, t){
+    const R = bodyR();
+
+    // --- mood clock ---
+    if (cre.mood !== 'idle'){
+      cre.moodT -= dt;
+      if (cre.moodT <= 0) cre.mood === 'flinching' ? mood('curious', 170) : mood('idle', 0);
+    }
+    cre.flinchCd -= dt;
+
+    // --- flinch: something touched it ---
+    if (ptr.on && cre.mood !== 'flinching' && cre.flinchCd <= 0){
+      const dx = cre.x - ptr.x, dy = cre.y - ptr.y, d = Math.hypot(dx, dy) || 1;
+      if (d < R * 1.35){
+        mood('flinching', 42); cre.flinchCd = 260; cre.jitter = 1;
+        cre.vx += dx / d * 1.7; cre.vy += dy / d * 1.7;
+      }
+    }
+
+    // --- breath: never stops, slows while listening ---
+    cre.br += (cre.mood === 'listening' ? .009 : .021) * dt;
+    const breath = 1 + (cre.mood === 'listening' ? .022 : .055) * Math.sin(cre.br);
+
+    let tense = 1;
+    if (cre.mood === 'flinching') tense = .66;
+    else if (cre.mood === 'listening') tense = 1.07;
+    else if (cre.mood === 'hesitating') tense = .9;
+    cre.contract += (tense - cre.contract) * .09 * dt;
+
+    // --- what it is heading for ---
+    let target = null, push = .0012;
+    if (cre.mood === 'listening' && phrases.length){
+      target = phrases[0]; push = .00016;                    // leans toward the voice
+    } else if (cre.mood === 'hesitating'){
+      target = { x:cre.x, y:cre.y }; push = 0;
+    } else if (cre.mood === 'flinching'){
+      target = { x:cre.x, y:cre.y }; push = 0;
+    } else if (cre.mood === 'curious' && ptr.on){
+      target = ptr; push = .00035;                           // comes back to see what you are
+    } else {
+      let best = 1e9;
+      for (const tk of tokens){
+        if (tk.state !== 'wanted' || tk.eaten) continue;
+        const d = (tk.x - cre.x) ** 2 + (tk.y - cre.y) ** 2;
+        if (d < best){ best = d; target = tk; }
+      }
+      if (!target){
+        cre.wander.t -= dt;
+        if (cre.wander.t <= 0){
+          cre.wander.t = 130 + Math.random() * 190;
+          cre.wander.x = W * (.18 + Math.random() * .64);
+          cre.wander.y = H * (.2 + Math.random() * .5);
+        }
+        target = cre.wander;
+        push = .0008;
+      }
+    }
+
+    cre.vx += (target.x - cre.x) * push * dt;
+    cre.vy += (target.y - cre.y) * push * dt;
+    cre.vx += Math.sin(t * .011) * .003 * dt;
+    cre.vy += Math.cos(t * .009) * .003 * dt;
+    cre.vx *= .972; cre.vy *= .972;
+
+    const max = 2.1 * (1 - Math.min(.35, cre.nodes.length / 260));
+    const sp = Math.hypot(cre.vx, cre.vy);
+    if (sp > max){ cre.vx *= max / sp; cre.vy *= max / sp; }
+    cre.x += cre.vx * dt; cre.y += cre.vy * dt;
+
+    const pad = R * .8 + 20;
+    cre.x = Math.max(pad, Math.min(W - pad, cre.x));
+    cre.y = Math.max(pad, Math.min(H - pad, cre.y));
+
+    // --- hesitation: the graph tries to re-wire itself ---
+    if (cre.mood === 'hesitating'){
+      cre.jitter = Math.min(1, cre.jitter + .04 * dt);
+      cre.rewireT -= dt;
+      if (cre.rewireT <= 0 && cre.edges.length > 3){
+        cre.rewireT = 26;
+        const e = cre.edges[Math.floor(Math.random() * cre.edges.length)];
+        let n = Math.floor(Math.random() * cre.nodes.length);
+        if (n !== e.a) e.b = n;
+        e.hot = 1;
+      }
+    } else cre.jitter *= Math.pow(.965, dt);
+
+    for (const e of cre.edges) e.hot *= Math.pow(.955, dt);
+
+    // --- node bodies ---
+    let maxOff = 1;
+    for (const n of cre.nodes) maxOff = Math.max(maxOff, Math.hypot(n.ox, n.oy));
+    const scale = Math.min(1, (R * .95) / maxOff) * breath * cre.contract;
+    for (const n of cre.nodes){
+      const j = cre.jitter * 4;
+      const tx = cre.x + n.ox * scale + Math.sin(t * .01 * n.sp + n.ph) * 5 + (Math.random() - .5) * j;
+      const ty = cre.y + n.oy * scale + Math.cos(t * .008 * n.sp + n.ph) * 5 + (Math.random() - .5) * j;
+      n.x += (tx - n.x) * .08 * dt;
+      n.y += (ty - n.y) * .08 * dt;
+    }
+
+    // --- tentacles ---
+    const sway = cre.mood === 'listening' ? .3 : 1;
+    const seg = 3.6 + Math.sqrt(cre.nodes.length) * .95;
+    for (const s of cre.strands){
+      const anc = cre.nodes[s.node]; if (!anc) continue;
+      s.pts[0].x = anc.x; s.pts[0].y = anc.y;
+      for (let i = 1; i < s.pts.length; i++){
+        const p = s.pts[i], q = s.pts[i - 1];
+        let dx = p.x - q.x, dy = p.y - q.y;
+        const d = Math.hypot(dx, dy) || 1;
+        p.x += ((q.x + dx / d * seg) - p.x) * .34 * dt;
+        p.y += ((q.y + dy / d * seg) - p.y) * .34 * dt;
+        p.x += Math.sin(t * .017 + i * .5 + s.ph) * .24 * sway * dt;
+        p.y += (.04 + i * .01) * dt;
+      }
+    }
+
+    // --- phrases: rise whole, then come apart ---
+    for (let i = phrases.length - 1; i >= 0; i--){
+      const p = phrases[i];
+      p.t += dt;
+      p.fade = Math.min(1, p.t / 22);
+      p.y -= (.42 + Math.sin(t * .01 + p.ph) * .04) * dt;
+      p.x += (p.vx + Math.sin(t * .008 + p.ph) * .06) * dt;
+      if (p.t > p.life){ fragment(p); phrases.splice(i, 1); }
+    }
+
+    // --- motes: the grammar, dissolving ---
+    for (let i = motes.length - 1; i >= 0; i--){
+      const m = motes[i];
+      m.x += m.vx * dt; m.y += m.vy * dt;
+      m.vx *= .97; m.vy *= .97; m.vy -= .002 * dt;
+      m.life -= .011 * dt;
+      if (m.life <= 0) motes.splice(i, 1);
+    }
+
+    // --- tokens ---
+    for (let i = tokens.length - 1; i >= 0; i--){
+      const tk = tokens[i];
+      if (tk.eaten){ tk.eaten += .04 * dt; if (tk.eaten > 1){ tokens.splice(i, 1); readout(); } continue; }
+
+      tk.age += dt * 16.67; tk.born = Math.min(1, tk.born + .05 * dt);
+
+      tk.vy -= .005 * dt;                                    // it never stops rising
+      tk.vx += Math.sin(t * .012 + tk.ph) * .003 * dt;
+
+      if (ptr.on){
+        const dx = tk.x - ptr.x, dy = tk.y - ptr.y, d = Math.hypot(dx, dy);
+        if (d < 110 && d > .1){
+          const f = 1 - d / 110;
+          tk.vx += (dx / d) * f * f * .26 * dt;
+          tk.vy += (dy / d) * f * f * .26 * dt;
+          tk.vx += ptr.vx * f * .045 * dt;
+          tk.vy += ptr.vy * f * .045 * dt;
+        }
+      }
+
+      tk.vx *= .975; tk.vy *= .975;
+      const s = Math.hypot(tk.vx, tk.vy);
+      if (s > 6){ tk.vx *= 6 / s; tk.vy *= 6 / s; }
+
+      tk.x += tk.vx * dt; tk.y += tk.vy * dt;
+      if (tk.x < 22){ tk.x = 22; tk.vx = Math.abs(tk.vx) * .4; }
+      if (tk.x > W - 22){ tk.x = W - 22; tk.vx = -Math.abs(tk.vx) * .4; }
+      if (tk.y > H - 18){ tk.y = H - 18; tk.vy = -Math.abs(tk.vy) * .3; }
+
+      // reaches the surface and is gone
+      tk.out = tk.y < 112 ? Math.max(0, (tk.y - 28) / 84) : 1;
+      if (tk.y < 28){ tokens.splice(i, 1); readout(); continue; }
+
+      if (tk.state === 'wanted' && cre.mood !== 'flinching' && Math.hypot(tk.x - cre.x, tk.y - cre.y) < R * .6){
+        tk.eaten = .01;
+        learn(tk.word, tk.side);
+      }
+    }
+
+    // --- pulses between lights ---
+    if (cre.edges.length && Math.random() < (cre.mood === 'hesitating' ? .14 : .05) * dt)
+      cre.pulses.push({ e:Math.floor(Math.random() * cre.edges.length), p:0 });
+    for (let i = cre.pulses.length - 1; i >= 0; i--){
+      cre.pulses[i].p += .022 * dt;
+      if (cre.pulses[i].p > 1) cre.pulses.splice(i, 1);
+    }
+
+    for (const s of snow){
+      s.y -= s.v * dt * .5;
+      s.x += Math.sin(t * .004 + s.ph) * .12 * dt;
+      if (s.y < -4){ s.y = H + 4; s.x = Math.random() * W; }
+    }
+
+    ptr.vx *= .8; ptr.vy *= .8;
+    cre.flash *= Math.pow(.94, dt);
+  }
+
+  function draw(t){
+    ctx.clearRect(0, 0, W, H);
+
+    for (const s of snow){
+      ctx.globalAlpha = s.a * (.5 + .5 * Math.sin(t * .02 + s.ph));
+      ctx.fillStyle = '#9FC4DA';
+      ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, 6.284); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = 'lighter';
+
+    // ---- phrases, still whole ----
+    ctx.font = PH_FONT;
+    ctx.textAlign = 'center';
+    for (const p of phrases){
+      const split = Math.max(0, (p.t - (p.life - 34)) / 34);      // last half second: it starts to come apart
+      const left = p.x - p.total / 2;
+      for (const w of p.words){
+        const home = left + w.x0 + w.width / 2;
+        const x = home + (home - p.x) * split * .5;
+        const y = p.y + (w.content ? -split * 3 : split * 5);
+        const a = p.fade * (1 - split * .25);
+        ctx.fillStyle = `rgba(221,231,241,${a * (1 - split * .8)})`;
+        ctx.fillText(w.raw, x, y);
+        if (w.content && split > 0){
+          const hue = SIDE[classify(w.c)].hue;
+          ctx.fillStyle = `hsla(${hue},90%,78%,${a * split})`;
+          ctx.fillText(w.raw, x, y);
+        }
+      }
+      const g = ctx.createRadialGradient(p.x, p.y - 2, 0, p.x, p.y - 2, p.total * .7);
+      g.addColorStop(0, `rgba(150,200,230,${.09 * p.fade * (1 - split)})`);
+      g.addColorStop(1, 'rgba(150,200,230,0)');
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(p.x, p.y - 2, p.total * .7, 0, 6.284); ctx.fill();
+    }
+
+    // ---- motes ----
+    ctx.font = '400 10px "Spline Sans Mono", monospace';
+    for (const m of motes){
+      ctx.fillStyle = `rgba(190,210,228,${.3 * m.life})`;
+      ctx.fillText(m.w, m.x, m.y);
+    }
+
+    // ---- tokens ----
+    for (const tk of tokens){
+      const fade = (tk.eaten ? 1 - tk.eaten : 1) * tk.born * tk.out;
+      const idle = tk.state === 'waiting';
+      const pop = tk.eaten ? 1 + tk.eaten * 1.6 : 1;
+      const glow = (idle ? 10 : 17) * pop;
+      const g = ctx.createRadialGradient(tk.x, tk.y, 0, tk.x, tk.y, glow);
+      g.addColorStop(0, `hsla(${tk.hue},${idle ? 45 : 95}%,${idle ? 58 : 72}%,${(idle ? .26 : .5) * fade})`);
+      g.addColorStop(1, `hsla(${tk.hue},90%,60%,0)`);
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(tk.x, tk.y, glow, 0, 6.284); ctx.fill();
+
+      ctx.fillStyle = `hsla(${tk.hue},${idle ? 50 : 100}%,${idle ? 72 : 90}%,${(idle ? .55 : 1) * fade})`;
+      ctx.beginPath(); ctx.arc(tk.x, tk.y, idle ? 1.2 : 1.8, 0, 6.284); ctx.fill();
+
+      ctx.font = '400 10px "Spline Sans Mono", monospace';
+      ctx.fillStyle = `hsla(${tk.hue},${idle ? 35 : 80}%,${idle ? 74 : 86}%,${(idle ? .38 : .8) * fade})`;
+      ctx.fillText(tk.word, tk.x, tk.y - 12);
+    }
+
+    const R = bodyR();
+    const dens = Math.max(.4, 1 - cre.nodes.length / 260);   // the bigger it gets, the quieter each light
+
+    // ---- halo, breathing ----
+    const hg = ctx.createRadialGradient(cre.x, cre.y, 0, cre.x, cre.y, R * 2.6);
+    hg.addColorStop(0, `hsla(${cre.hue},80%,60%,${.09 * dens + cre.flash * .18})`);
+    hg.addColorStop(.5, `hsla(${cre.hue},80%,50%,.045)`);
+    hg.addColorStop(1, `hsla(${cre.hue},80%,50%,0)`);
+    ctx.fillStyle = hg;
+    ctx.beginPath(); ctx.arc(cre.x, cre.y, R * 2.6, 0, 6.284); ctx.fill();
+
+    // ---- tentacles ----
+    ctx.lineCap = 'round';
+    for (const s of cre.strands){
+      const anc = cre.nodes[s.node]; if (!anc) continue;
+      const tip = s.pts[s.pts.length - 1];
+      const g = ctx.createLinearGradient(s.pts[0].x, s.pts[0].y, tip.x, tip.y);
+      g.addColorStop(0, `hsla(${anc.hue},90%,${68 + cre.flash * 20}%,${.3 + cre.flash * .3})`);
+      g.addColorStop(1, `hsla(${anc.hue},90%,70%,0)`);
+      ctx.strokeStyle = g;
+      ctx.lineWidth = s.w;
+      ctx.beginPath();
+      ctx.moveTo(s.pts[0].x, s.pts[0].y);
+      for (let i = 1; i < s.pts.length; i++) ctx.lineTo(s.pts[i].x, s.pts[i].y);
+      ctx.stroke();
+
+      const tg = ctx.createRadialGradient(tip.x, tip.y, 0, tip.x, tip.y, 5);
+      tg.addColorStop(0, `hsla(${anc.hue},100%,82%,${.25 + cre.flash * .3})`);
+      tg.addColorStop(1, `hsla(${anc.hue},100%,70%,0)`);
+      ctx.fillStyle = tg;
+      ctx.beginPath(); ctx.arc(tip.x, tip.y, 5, 0, 6.284); ctx.fill();
+    }
+
+    // ---- edges ----
+    for (const e of cre.edges){
+      const a = cre.nodes[e.a], b = cre.nodes[e.b];
+      if (!a || !b) continue;
+      const al = .26 * dens + cre.flash * .4 + e.hot * .5;
+      ctx.lineWidth = .8 + e.hot * 1.1;
+      const gr = ctx.createLinearGradient(a.x, a.y, b.x, b.y);
+      gr.addColorStop(0, `hsla(${a.hue},90%,${65 + e.hot * 25}%,${al})`);
+      gr.addColorStop(1, `hsla(${b.hue},90%,${65 + e.hot * 25}%,${al})`);
+      ctx.strokeStyle = gr;
+      ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+    }
+
+    // ---- pulses ----
+    for (const p of cre.pulses){
+      const e = cre.edges[p.e]; if (!e) continue;
+      const a = cre.nodes[e.a], b = cre.nodes[e.b]; if (!a || !b) continue;
+      const x = a.x + (b.x - a.x) * p.p, y = a.y + (b.y - a.y) * p.p;
+      const g = ctx.createRadialGradient(x, y, 0, x, y, 7);
+      g.addColorStop(0, `hsla(${b.hue},100%,85%,${.8 * (1 - p.p)})`);
+      g.addColorStop(1, `hsla(${b.hue},100%,70%,0)`);
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(x, y, 7, 0, 6.284); ctx.fill();
+    }
+
+    // ---- nodes: bioluminescence blinks. most of them are dark at any moment ----
+    for (const n of cre.nodes){
+      const a = Math.sin(t * .022 * n.sp + n.ph);
+      const b = Math.sin(t * .0079 * n.sp2 + n.ph2);
+      let beat = Math.max(0, a) * Math.max(0, .3 + .7 * b);
+      beat = Math.pow(beat, 1.7);
+      const lit = Math.min(1.2, beat + cre.flash);            // eating lights the whole network at once
+      if (lit > .05){
+        const rad = n.r * (.6 + lit * 3.1);
+        const g = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, rad * 2.6);
+        g.addColorStop(0, `hsla(${n.hue},95%,74%,${Math.min(.6, lit * .5 * dens)})`);
+        g.addColorStop(1, `hsla(${n.hue},95%,60%,0)`);
+        ctx.fillStyle = g;
+        ctx.beginPath(); ctx.arc(n.x, n.y, rad * 2.6, 0, 6.284); ctx.fill();
+      }
+      ctx.fillStyle = `hsla(${n.hue},100%,90%,${(.13 + lit * .72) * Math.min(1, dens + .3)})`;
+      ctx.beginPath(); ctx.arc(n.x, n.y, n.r * (.42 + lit * .5), 0, 6.284); ctx.fill();
+    }
+
+    ctx.globalCompositeOperation = 'source-over';
+  }
+
+  // ================= input =================
+  const say = document.getElementById('say'), send = document.getElementById('send');
+  function submit(){
+    const v = say.value.trim();
+    if (!v) return;
+    teach(v); say.value = '';
+  }
+  send.addEventListener('click', submit);
+  say.addEventListener('keydown', e => { if (e.key === 'Enter') submit(); });
+
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (SR){
+    const mic = document.getElementById('mic');
+    mic.hidden = false;
+    const rec = new SR();
+    rec.continuous = true; rec.interimResults = false; rec.lang = 'en-US';
+    let live = false;
+    rec.onresult = e => {
+      for (let i = e.resultIndex; i < e.results.length; i++)
+        if (e.results[i].isFinal) teach(e.results[i][0].transcript);
+    };
+    rec.onend = () => { if (live){ try { rec.start(); } catch(_){} } };
+    rec.onerror = () => { live = false; mic.setAttribute('aria-pressed','false'); mic.textContent = 'Speak'; };
+    mic.addEventListener('click', () => {
+      live = !live;
+      mic.setAttribute('aria-pressed', String(live));
+      mic.textContent = live ? 'Listening' : 'Speak';
+      try { live ? rec.start() : rec.stop(); } catch(_){}
+    });
+  }
+
+  // ================= boot =================
+  resize(); makeSnow();
+  cre.x = W * .5; cre.y = H * .4;
+  seed();
+  for (const n of cre.nodes){ n.x = cre.x + n.ox; n.y = cre.y + n.oy; }
+  for (const s of cre.strands) for (const p of s.pts){ p.x = cre.x; p.y = cre.y; }
+  readout();
+  addEventListener('resize', () => { resize(); makeSnow(); });
+
+  if (reduce){
+    step(1, 0); draw(0);
+    setInterval(() => { step(1, performance.now() * .001); draw(performance.now() * .05); }, 100);
+  } else {
+    requestAnimationFrame(frame);
+  }
+})();
+</script>
+</body>
+</html>
